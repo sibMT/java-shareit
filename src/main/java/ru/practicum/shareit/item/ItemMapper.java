@@ -1,5 +1,6 @@
 package ru.practicum.shareit.item;
 
+import lombok.experimental.UtilityClass;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemUpdateDto;
@@ -7,12 +8,11 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.request.ItemRequest;
 import ru.practicum.shareit.user.User;
 
+@UtilityClass
 public class ItemMapper {
 
-    private ItemMapper() {
-    }
 
-    public static ItemDto toItemDto(Item item) {
+    public ItemDto toItemDto(Item item) {
         if (item == null) {
             return null;
         }
@@ -27,7 +27,7 @@ public class ItemMapper {
                 requestId);
     }
 
-    public static Item toItem(ItemCreateDto dto, User owner, ItemRequest request) {
+    public Item toItem(ItemCreateDto dto, User owner, ItemRequest request) {
         if (dto == null) return null;
 
         Item item = new Item();
@@ -39,7 +39,7 @@ public class ItemMapper {
         return item;
     }
 
-    public static Item toItem(ItemUpdateDto dto, User owner, ItemRequest request) {
+    public Item toItem(ItemUpdateDto dto, User owner, ItemRequest request) {
         if (dto == null) return null;
 
         Item item = new Item();

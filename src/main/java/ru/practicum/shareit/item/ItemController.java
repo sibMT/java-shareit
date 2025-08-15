@@ -2,7 +2,6 @@ package ru.practicum.shareit.item;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.item.dto.ItemDto;
@@ -14,7 +13,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/items")
 @RequiredArgsConstructor
-@Validated
 public class ItemController {
 
     private final ItemService itemService;
@@ -28,7 +26,7 @@ public class ItemController {
     @PatchMapping("/{id}")
     public ItemDto update(@RequestHeader("X-Sharer-User-Id") Long ownerId,
                           @PathVariable Long id,
-                          @Valid @RequestBody ItemUpdateDto itemDto) {
+                          @RequestBody ItemUpdateDto itemDto) {
         return itemService.updateItem(ownerId, id, itemDto);
     }
 
