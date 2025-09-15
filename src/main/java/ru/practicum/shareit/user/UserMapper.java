@@ -6,8 +6,28 @@ import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserUpdateDto;
 
 @UtilityClass
-public final class UserMapper {
+public class UserMapper {
 
+    public User toUser(UserCreateDto dto) {
+        if (dto == null) {
+            return null;
+        }
+        return User.builder()
+                .name(dto.getName())
+                .email(dto.getEmail())
+                .build();
+    }
+
+    public User toUser(Long id, UserUpdateDto dto) {
+        if (dto == null) {
+            return null;
+        }
+        return User.builder()
+                .id(id)
+                .name(dto.getName())
+                .email(dto.getEmail())
+                .build();
+    }
 
     public UserDto toUserDto(User user) {
         if (user == null) {
@@ -18,26 +38,6 @@ public final class UserMapper {
                 user.getName(),
                 user.getEmail()
         );
-    }
-
-    public User toUser(UserCreateDto dto) {
-        if (dto == null) {
-            return null;
-        }
-        User user = new User();
-        user.setName(dto.getName());
-        user.setEmail(dto.getEmail());
-        return user;
-    }
-
-    public User toUser(UserUpdateDto dto) {
-        if (dto == null) {
-            return null;
-        }
-        User user = new User();
-        user.setName(dto.getName());
-        user.setEmail(dto.getEmail());
-        return user;
     }
 }
 

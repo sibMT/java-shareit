@@ -1,66 +1,77 @@
 package ru.practicum.shareit.user;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.user.dto.UserCreateDto;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserUpdateDto;
 
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class UserServiceImpl implements UserService {
+
     private final UserRepository userRepository;
 
     @Override
     public UserDto createUser(UserCreateDto dto) {
-        if (userRepository.existsUserByEmail(dto.getEmail())) {
-            throw new IllegalArgumentException("Email уже существует: " + dto.getEmail());
+        User user = UserMapper.toUser(dto);
+        try {
+            User saved = userRepository.save(user);
+            return UserMapper.toUserDto(saved);
+        } catch (DataIntegrityViolationException e) {
+            throw e;
         }
-        User created = userRepository.createUser(UserMapper.toUser(dto));
-        return UserMapper.toUserDto(created);
     }
 
     @Override
-    public UserDto updateUser(Long userId, UserUpdateDto dto) {
-        User existing = userRepository.findUserById(userId)
-                .orElseThrow(() -> new NoSuchElementException("User не найден: id=" + userId));
+    @Transactional(readOnly = true)
+    public UserDto getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("User not found: " + id));
+        return UserMapper.toUserDto(user);
+    }
 
-        if (dto.getEmail() != null && !dto.getEmail().equals(existing.getEmail())) {
-            Optional<User> other = userRepository.findUserByEmail(dto.getEmail());
-            if (other.isPresent() && !other.get().getId().equals(existing.getId())) {
-                throw new IllegalArgumentException("Email уже существует: " + dto.getEmail());
-            }
+    @Override
+    public UserDto updateUser(Long id, UserUpdateDto dto) {
+        User existing = userRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("User not found: " + id));
+
+        if (dto.getName() != null && !dto.getName().isBlank()) {
+            existing.setName(dto.getName());
+        }
+        if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
             existing.setEmail(dto.getEmail());
         }
 
-        if (dto.getName() != null) {
-            existing.setName(dto.getName());
+        try {
+            User updated = userRepository.save(existing);
+            return UserMapper.toUserDto(updated);
+        } catch (DataIntegrityViolationException e) {
+            throw e;
         }
-
-        User saved = userRepository.updateUser(existing);
-        return UserMapper.toUserDto(saved);
     }
 
     @Override
     public void deleteUser(Long id) {
-        userRepository.deleteUserById(id);
+        if (!userRepository.existsById(id)) {
+            throw new NoSuchElementException("User not found: " + id);
+        }
+        userRepository.deleteById(id);
     }
 
-    @Override
-    public UserDto getUserById(Long id) {
-        User u = userRepository.findUserById(id)
-                .orElseThrow(() -> new NoSuchElementException("User не найден: id=" + id));
-        return UserMapper.toUserDto(u);
-    }
 
     @Override
+    @Transactional(readOnly = true)
     public List<UserDto> getAllUsers() {
-        return userRepository.findAllUsers().stream()
+        return userRepository.findAll().stream()
                 .map(UserMapper::toUserDto)
                 .toList();
     }
 }
+
