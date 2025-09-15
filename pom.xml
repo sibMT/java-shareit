@@ -18,7 +18,6 @@
 
 	<properties>
 		<java.version>21</java.version>
-		<!-- версии плагинов -->
 		<maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
 		<checkstyle.version>10.3</checkstyle.version>
 		<spotbugs-maven-plugin.version>4.8.5.0</spotbugs-maven-plugin.version>
@@ -26,7 +25,6 @@
 	</properties>
 
 	<dependencies>
-		<!-- Spring -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
@@ -44,34 +42,36 @@
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 
-		<!-- PostgreSQL: runtime -->
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- Lombok -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
 
-		<!-- Processor для @ConfigurationProperties (опционально) -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-configuration-processor</artifactId>
 			<optional>true</optional>
 		</dependency>
 
-		<!-- Тесты -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		<!-- H2 только для тестов (в памяти) -->
+
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>test</scope>
+		</dependency>
+
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
@@ -81,7 +81,7 @@
 
 	<build>
 		<plugins>
-			<!-- Spring Boot -->
+
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
@@ -95,7 +95,6 @@
 				</configuration>
 			</plugin>
 
-			<!-- Компилятор (на всякий случай явно) -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -104,7 +103,6 @@
 				</configuration>
 			</plugin>
 
-			<!-- Checkstyle -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-checkstyle-plugin</artifactId>
@@ -130,7 +128,6 @@
 				</executions>
 			</plugin>
 
-			<!-- SpotBugs -->
 			<plugin>
 				<groupId>com.github.spotbugs</groupId>
 				<artifactId>spotbugs-maven-plugin</artifactId>
@@ -146,7 +143,6 @@
 				</executions>
 			</plugin>
 
-			<!-- JaCoCo -->
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
@@ -209,7 +205,6 @@
 		</plugins>
 	</build>
 
-	<!-- при желании можно добавить профили -->
 	<profiles>
 		<profile>
 			<id>coverage</id>
