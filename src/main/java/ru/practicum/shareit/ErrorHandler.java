@@ -49,7 +49,7 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
-    public void ResponseStatusException(org.springframework.web.server.ResponseStatusException e) {
+    public void responseStatusException(org.springframework.web.server.ResponseStatusException e) {
         throw e;
     }
 
