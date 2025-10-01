@@ -17,14 +17,14 @@ import java.time.LocalDateTime;
 @Transactional
 @RequiredArgsConstructor
 public class CommentServiceImpl implements CommentService {
-
     private final CommentRepository commentRepository;
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
+    private final CommentMapper commentMapper;
 
     @Override
-    public CommentDto addComment(Long userId, Long itemId, String text) {
+    public CommentDto addComment(Long userId, Long itemId, CommentDto dto) {
         User author = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
@@ -38,16 +38,9 @@ public class CommentServiceImpl implements CommentService {
         if (!hasBooking) {
             throw new IllegalStateException("User " + userId + " has not completed a booking for item " + itemId);
         }
+        Comment toSave = commentMapper.toEntity(dto, author, item);
+        Comment saved = commentRepository.save(toSave);
 
-        Comment comment = Comment.builder()
-                .text(text)
-                .author(author)
-                .item(item)
-                .created(LocalDateTime.now())
-                .build();
-
-        Comment saved = commentRepository.save(comment);
-
-        return CommentMapper.toDto(saved);
+        return commentMapper.toDto(saved);
     }
 }

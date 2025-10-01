@@ -3,7 +3,7 @@ package ru.practicum.shareit.booking;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.shareit.booking.dto.BookingCreateRequest;
+import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingResponse;
 import ru.practicum.shareit.item.ItemRepository;
 import ru.practicum.shareit.item.model.Item;
@@ -23,14 +23,15 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
     private final ItemRepository itemRepository;
+    private final BookingMapper bookingMapper;
 
     @Override
-    public BookingResponse createBooking(Long bookerId, BookingCreateRequest request) {
+    public BookingResponse createBooking(Long bookerId, BookingDto dto) {
         User booker = userRepository.findById(bookerId)
                 .orElseThrow(() -> new NoSuchElementException("User не найден: id=" + bookerId));
 
-        Item item = itemRepository.findById(request.getItemId())
-                .orElseThrow(() -> new NoSuchElementException("Item не найден: id=" + request.getItemId()));
+        Item item = itemRepository.findById(dto.getItemId())
+                .orElseThrow(() -> new NoSuchElementException("Item не найден: id=" + dto.getItemId()));
 
         if (!item.isAvailable()) {
             throw new IllegalArgumentException("Item недоступен для бронирования");
@@ -38,34 +39,34 @@ public class BookingServiceImpl implements BookingService {
         if (item.getOwner().getId().equals(bookerId)) {
             throw new SecurityException("Владелец не может бронировать свою вещь");
         }
-        if (request.getStart() == null || request.getEnd() == null) {
+        if (dto.getStart() == null || dto.getEnd() == null) {
             throw new IllegalArgumentException("Даты не могут быть null");
         }
-        if (!request.getEnd().isAfter(request.getStart())) {
+        if (!dto.getEnd().isAfter(dto.getStart())) {
             throw new IllegalArgumentException("Некорректный интервал времени");
         }
 
         LocalDateTime now = LocalDateTime.now();
-        if (request.getStart().isBefore(now)) {
+        if (dto.getStart().isBefore(now)) {
             throw new IllegalArgumentException("Дата начала в прошлом");
         }
-        if (request.getEnd().isBefore(now)) {
+        if (dto.getEnd().isBefore(now)) {
             throw new IllegalArgumentException("Дата окончания в прошлом");
         }
 
         boolean overlaps = bookingRepository.existsByItem_IdAndStatusInAndEndAfterAndStartBefore(
                 item.getId(),
                 List.of(BookingStatus.APPROVED, BookingStatus.WAITING),
-                request.getStart(),
-                request.getEnd()
+                dto.getStart(),
+                dto.getEnd()
         );
         if (overlaps) {
             throw new IllegalArgumentException("Есть пересечение с существующим бронированием");
         }
 
-        Booking toSave = BookingMapper.fromCreateRequest(request, item, booker);
+        Booking toSave = bookingMapper.toNewEntity(dto, item, booker);
         Booking saved = bookingRepository.save(toSave);
-        return BookingMapper.toDto(saved);
+        return bookingMapper.toResponse(saved);
     }
 
     @Override
@@ -82,7 +83,7 @@ public class BookingServiceImpl implements BookingService {
 
         booking.setStatus(approved ? BookingStatus.APPROVED : BookingStatus.REJECTED);
         Booking updated = bookingRepository.save(booking);
-        return BookingMapper.toDto(updated);
+        return bookingMapper.toResponse(updated);
     }
 
     @Override
@@ -96,7 +97,7 @@ public class BookingServiceImpl implements BookingService {
         if (!ownerId.equals(requesterId) && !bookerId.equals(requesterId)) {
             throw new SecurityException("Доступ запрещён");
         }
-        return BookingMapper.toDto(booking);
+        return bookingMapper.toResponse(booking);
     }
 
     @Override
@@ -114,7 +115,7 @@ public class BookingServiceImpl implements BookingService {
             case "REJECTED" -> bookingRepository.findByBookerAndStatus(bookerId, BookingStatus.REJECTED);
             default -> bookingRepository.findAllByBookerOrderByStartDesc(bookerId); // ALL
         };
-        return bookings.stream().map(BookingMapper::toDto).toList();
+        return bookings.stream().map(bookingMapper::toResponse).toList();
     }
 
     @Override
@@ -132,7 +133,7 @@ public class BookingServiceImpl implements BookingService {
             case "REJECTED" -> bookingRepository.findByOwnerAndStatus(ownerId, BookingStatus.REJECTED);
             default -> bookingRepository.findAllByOwnerOrderByStartDesc(ownerId); // ALL
         };
-        return bookings.stream().map(BookingMapper::toDto).toList();
+        return bookings.stream().map(bookingMapper::toResponse).toList();
     }
 
     @Override
@@ -147,7 +148,7 @@ public class BookingServiceImpl implements BookingService {
             throw new IllegalStateException("Нельзя отменить уже начавшееся бронирование");
         }
         if (booking.getStatus() == BookingStatus.CANCELED) {
-            return BookingMapper.toDto(booking);
+            return bookingMapper.toResponse(booking);
         }
         if (booking.getStatus() != BookingStatus.WAITING && booking.getStatus() != BookingStatus.APPROVED) {
             throw new IllegalStateException("Текущий статус не позволяет отмену: " + booking.getStatus());
@@ -155,7 +156,7 @@ public class BookingServiceImpl implements BookingService {
 
         booking.setStatus(BookingStatus.CANCELED);
         Booking updated = bookingRepository.save(booking);
-        return BookingMapper.toDto(updated);
+        return bookingMapper.toResponse(updated);
     }
 
     @Override

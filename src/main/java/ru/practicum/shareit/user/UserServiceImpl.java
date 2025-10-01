@@ -4,9 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.shareit.user.dto.UserCreateDto;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.dto.UserUpdateDto;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -17,16 +15,18 @@ import java.util.NoSuchElementException;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     @Override
-    public UserDto createUser(UserCreateDto dto) {
-        User user = UserMapper.toUser(dto);
+    public UserDto createUser(UserDto dto) {
+        User toSave = userMapper.toNewEntity(dto);
+        User saved;
         try {
-            User saved = userRepository.save(user);
-            return UserMapper.toUserDto(saved);
+            saved = userRepository.save(toSave);
         } catch (DataIntegrityViolationException e) {
             throw e;
         }
+        return userMapper.toUserDto(saved);
     }
 
     @Override
@@ -34,24 +34,19 @@ public class UserServiceImpl implements UserService {
     public UserDto getUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("User not found: " + id));
-        return UserMapper.toUserDto(user);
+        return userMapper.toUserDto(user);
     }
 
     @Override
-    public UserDto updateUser(Long id, UserUpdateDto dto) {
+    public UserDto updateUser(Long id, UserDto dto) {
         User existing = userRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("User not found: " + id));
 
-        if (dto.getName() != null && !dto.getName().isBlank()) {
-            existing.setName(dto.getName());
-        }
-        if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
-            existing.setEmail(dto.getEmail());
-        }
+        userMapper.updateEntity(dto, existing);
 
         try {
             User updated = userRepository.save(existing);
-            return UserMapper.toUserDto(updated);
+            return userMapper.toUserDto(updated);
         } catch (DataIntegrityViolationException e) {
             throw e;
         }
@@ -70,7 +65,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public List<UserDto> getAllUsers() {
         return userRepository.findAll().stream()
-                .map(UserMapper::toUserDto)
+                .map(userMapper::toUserDto)
                 .toList();
     }
 }

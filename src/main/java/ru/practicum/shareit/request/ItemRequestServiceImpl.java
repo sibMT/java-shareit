@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.item.ItemMapper;
 import ru.practicum.shareit.item.ItemRepository;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.request.dto.ItemRequestCreateDto;
 import ru.practicum.shareit.request.dto.ItemRequestDetailsDto;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.user.User;
@@ -25,13 +24,16 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     private final ItemRequestRepository requestRepository;
     private final UserRepository userRepository;
     private final ItemRepository itemRepository;
+    private final ItemRequestMapper itemRequestMapper;
+    private final ItemMapper itemMapper;
 
     @Override
-    public ItemRequestDto create(Long requesterId, ItemRequestCreateDto dto) {
+    public ItemRequestDto create(Long requesterId, Create dto) {
         User requester = userRepository.findById(requesterId)
                 .orElseThrow(() -> new NoSuchElementException("User не найден: id=" + requesterId));
-        ItemRequest saved = requestRepository.save(ItemRequestMapper.toEntity(dto, requester));
-        return ItemRequestMapper.toDto(saved);
+        ItemRequest entity = itemRequestMapper.toEntity(dto, requester);
+        ItemRequest saved = requestRepository.save(entity);
+        return itemRequestMapper.toDto(saved);
     }
 
     @Override
@@ -40,7 +42,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         userRepository.findById(requesterId)
                 .orElseThrow(() -> new NoSuchElementException("User не найден: id=" + requesterId));
         return requestRepository.findByRequester_IdOrderByCreatedDesc(requesterId)
-                .stream().map(ItemRequestMapper::toDto).toList();
+                .stream().map(itemRequestMapper::toDto).toList();
     }
 
     @Override
@@ -50,7 +52,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
                 .orElseThrow(() -> new NoSuchElementException("User не найден: id=" + requesterId));
         Pageable page = PageRequest.of(from / size, size, Sort.by(Sort.Direction.DESC, "created"));
         return requestRepository.findByRequester_IdNotOrderByCreatedDesc(requesterId, page)
-                .map(ItemRequestMapper::toDto).getContent();
+                .map(itemRequestMapper::toDto).getContent();
     }
 
     @Override
@@ -63,7 +65,7 @@ public class ItemRequestServiceImpl implements ItemRequestService {
                 .orElseThrow(() -> new NoSuchElementException("Request не найден: id=" + requestId));
 
         List<ItemDto> items = itemRepository.findByRequest_Id(requestId)
-                .stream().map(ItemMapper::toItemDto).toList();
-        return ItemRequestMapper.toDetails(req, items);
+                .stream().map(itemMapper::toItemDto).toList();
+        return itemRequestMapper.toDetails(req, items);
     }
 }

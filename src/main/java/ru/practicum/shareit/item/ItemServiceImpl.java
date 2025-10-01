@@ -7,11 +7,11 @@ import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingRepository;
 import ru.practicum.shareit.booking.BookingStatus;
 import ru.practicum.shareit.comment.CommentRepository;
-import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemOwnerViewDto;
-import ru.practicum.shareit.item.dto.ItemUpdateDto;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.request.ItemRequest;
+import ru.practicum.shareit.request.ItemRequestRepository;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
 
@@ -27,29 +27,42 @@ public class ItemServiceImpl implements ItemService {
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
+    private final ItemRequestRepository itemRequestRepository;
+    private final ItemMapper itemMapper;
 
     @Override
     @Transactional
-    public ItemDto createItem(Long ownerId, ItemCreateDto itemDto) {
+    public ItemDto createItem(Long ownerId, ItemDto itemDto) {
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new NoSuchElementException("Owner не найден: id=" + ownerId));
-        Item item = ItemMapper.toItem(itemDto, owner, null);
-        Item saved = itemRepository.save(item);
-        return ItemMapper.toItemDto(saved);
+
+        ItemRequest request = null;
+        if (itemDto.getRequestId() != null) {
+            request = itemRequestRepository.findById(itemDto.getRequestId())
+                    .orElseThrow(() -> new NoSuchElementException("Request не найден: id=" + itemDto.getRequestId()));
+        }
+
+        Item toSave = itemMapper.toNewEntity(itemDto, owner, request);
+        Item saved = itemRepository.save(toSave);
+        return itemMapper.toItemDto(saved);
     }
 
     @Override
     @Transactional
-    public ItemDto updateItem(Long ownerId, Long itemId, ItemUpdateDto itemDto) {
+    public ItemDto updateItem(Long ownerId, Long itemId, ItemDto itemDto) {
         Item existing = itemRepository.findById(itemId)
                 .orElseThrow(() -> new NoSuchElementException("Item не найден: id=" + itemId));
         if (!existing.getOwner().getId().equals(ownerId)) {
             throw new SecurityException("Только owner может изменить item");
         }
-        if (itemDto.getName() != null) existing.setName(itemDto.getName());
-        if (itemDto.getDescription() != null) existing.setDescription(itemDto.getDescription());
-        if (itemDto.getAvailable() != null) existing.setAvailable(itemDto.getAvailable());
-        return ItemMapper.toItemDto(itemRepository.save(existing));
+        itemMapper.updateEntity(itemDto, existing);
+        if (itemDto.getRequestId() != null) {
+            ItemRequest req = itemRequestRepository.findById(itemDto.getRequestId())
+                    .orElseThrow(() -> new NoSuchElementException("Request не найден: id=" + itemDto.getRequestId()));
+            existing.setRequest(req);
+        }
+        Item updated = itemRepository.save(existing);
+        return itemMapper.toItemDto(updated);
     }
 
     @Override
@@ -74,13 +87,13 @@ public class ItemServiceImpl implements ItemService {
         }
 
         var comments = commentRepository.findAllByItem_IdOrderByCreatedDesc(itemId);
-        return ItemMapper.toOwnerViewDto(item, last, next, comments);
+        return itemMapper.toOwnerViewDto(item, last, next, comments);
     }
 
     @Override
     public List<ItemDto> getItemsByOwner(Long ownerId) {
         return itemRepository.findItemByOwner_Id(ownerId).stream()
-                .map(ItemMapper::toItemDto)
+                .map(itemMapper::toItemDto)
                 .toList();
     }
 
@@ -88,7 +101,7 @@ public class ItemServiceImpl implements ItemService {
     public List<ItemDto> searchItem(String text) {
         if (text == null || text.isBlank()) return List.of();
         return itemRepository.searchItem(text).stream()
-                .map(ItemMapper::toItemDto)
+                .map(itemMapper::toItemDto)
                 .toList();
     }
 }

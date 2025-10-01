@@ -1,45 +1,26 @@
 package ru.practicum.shareit.booking;
 
-import ru.practicum.shareit.booking.dto.BookingCreateRequest;
+import org.mapstruct.*;
+import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingResponse;
-import ru.practicum.shareit.booking.dto.BookingShortDto;
-import ru.practicum.shareit.item.dto.ItemShortDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.User;
-import ru.practicum.shareit.user.dto.UserShortDto;
 
-public class BookingMapper {
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface BookingMapper {
+    BookingResponse toResponse(Booking booking);
 
-    private BookingMapper() {
-    }
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "item", ignore = true)
+    @Mapping(target = "booker", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    void updateEntity(BookingDto dto, @MappingTarget Booking target);
 
-    public static Booking fromCreateRequest(BookingCreateRequest req, Item item, User booker) {
-        return Booking.builder()
-                .start(req.getStart())
-                .end(req.getEnd())
-                .item(item)
-                .booker(booker)
-                .status(BookingStatus.WAITING)
-                .build();
-    }
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "item", source = "item")
+    @Mapping(target = "booker", source = "booker")
+    @Mapping(target = "status", constant = "WAITING")
+    Booking toNewEntity(BookingDto dto, Item item, User booker);
 
-    public static BookingResponse toDto(Booking b) {
-        return new BookingResponse(
-                b.getId(),
-                b.getStart(),
-                b.getEnd(),
-                b.getStatus(),
-                new ItemShortDto(b.getItem().getId(), b.getItem().getName()),
-                new UserShortDto(b.getBooker().getId())
-        );
-    }
-
-    public static BookingShortDto toShortDto(Booking b) {
-        return new BookingShortDto(
-                b.getId(),
-                b.getStart(),
-                b.getEnd(),
-                b.getBooker().getId()
-        );
-    }
 }
