@@ -46,14 +46,6 @@ public class BookingServiceImpl implements BookingService {
             throw new IllegalArgumentException("Некорректный интервал времени");
         }
 
-        LocalDateTime now = LocalDateTime.now();
-        if (dto.getStart().isBefore(now)) {
-            throw new IllegalArgumentException("Дата начала в прошлом");
-        }
-        if (dto.getEnd().isBefore(now)) {
-            throw new IllegalArgumentException("Дата окончания в прошлом");
-        }
-
         boolean overlaps = bookingRepository.existsByItem_IdAndStatusInAndEndAfterAndStartBefore(
                 item.getId(),
                 List.of(BookingStatus.APPROVED, BookingStatus.WAITING),
