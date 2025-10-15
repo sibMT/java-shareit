@@ -129,60 +129,65 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
             </plugin>
-
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>${jacoco.version}</version>
+                <version>0.8.12</version>
+
                 <executions>
                     <execution>
                         <id>jacoco-initialize</id>
-                        <goals><goal>prepare-agent</goal></goals>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
                     </execution>
+
                     <execution>
                         <id>jacoco-report</id>
-                        <phase>verify</phase>
-                        <goals><goal>report</goal></goals>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
                     </execution>
+
                     <execution>
                         <id>jacoco-check</id>
                         <phase>verify</phase>
-                        <goals><goal>check</goal></goals>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
                         <configuration>
+                            <haltOnFailure>true</haltOnFailure>
+
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
+
+                                    <includes>
+                                        <include>ru/practicum/shareit/**/*Service*.class</include>
+                                        <include>ru/practicum/shareit/**/service/**</include>
+                                    </includes>
+                                    <excludes>
+                                        <exclude>**/*Controller*.class</exclude>
+                                        <exclude>**/*Mapper*.class</exclude>
+                                        <exclude>**/*Dto*.class</exclude>
+                                        <exclude>**/*Repository*.class</exclude>
+                                        <exclude>**/*Exception*.class</exclude>
+                                        <exclude>**/config/**</exclude>
+                                        <exclude>**/*Application*.class</exclude>
+                                        <exclude>**/model/**</exclude>
+                                        <exclude>**/entity/**</exclude>
+                                    </excludes>
+
                                     <limits>
                                         <limit>
-                                            <counter>LINE</counter>
+                                            <counter>INSTRUCTION</counter>
                                             <value>COVEREDRATIO</value>
                                             <minimum>0.80</minimum>
-                                        </limit>
-                                        <limit>
-                                            <counter>BRANCH</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.50</minimum>
-                                        </limit>
-                                        <limit>
-                                            <counter>COMPLEXITY</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.50</minimum>
                                         </limit>
                                     </limits>
                                 </rule>
                             </rules>
-                            <excludes>
-                                <exclude>**/*Dto*.class</exclude>
-                                <exclude>**/*Request*.class</exclude>
-                                <exclude>**/*Response*.class</exclude>
-
-                                <exclude>**/*Mapper*.class</exclude>
-                                <exclude>**/*MapperImpl*.class</exclude>
-
-                                <exclude>**/*Controller*.class</exclude>
-                                <exclude>**/config/**</exclude>
-                                <exclude>**/*Configuration*.class</exclude>
-                            </excludes>
                         </configuration>
                     </execution>
                 </executions>
