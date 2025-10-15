@@ -99,14 +99,18 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new NoSuchElementException("User не найден: id=" + bookerId));
 
         LocalDateTime now = LocalDateTime.now();
-        List<Booking> bookings = switch (state == null ? "ALL" : state.toUpperCase()) {
+        String s = (state == null ? "ALL" : state.toUpperCase());
+
+        List<Booking> bookings = switch (s) {
+            case "ALL" -> bookingRepository.findAllByBookerOrderByStartDesc(bookerId);
             case "CURRENT" -> bookingRepository.findCurrentByBooker(bookerId, now);
             case "PAST" -> bookingRepository.findPastByBooker(bookerId, now);
             case "FUTURE" -> bookingRepository.findFutureByBooker(bookerId, now);
             case "WAITING" -> bookingRepository.findByBookerAndStatus(bookerId, BookingStatus.WAITING);
             case "REJECTED" -> bookingRepository.findByBookerAndStatus(bookerId, BookingStatus.REJECTED);
-            default -> bookingRepository.findAllByBookerOrderByStartDesc(bookerId); // ALL
+            default -> throw new IllegalArgumentException("Unknown state: " + state);
         };
+
         return bookings.stream().map(bookingMapper::toResponse).toList();
     }
 
@@ -117,14 +121,18 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new NoSuchElementException("User не найден: id=" + ownerId));
 
         LocalDateTime now = LocalDateTime.now();
-        List<Booking> bookings = switch (state == null ? "ALL" : state.toUpperCase()) {
+        String s = (state == null ? "ALL" : state.toUpperCase());
+
+        List<Booking> bookings = switch (s) {
+            case "ALL" -> bookingRepository.findAllByOwnerOrderByStartDesc(ownerId);
             case "CURRENT" -> bookingRepository.findCurrentByOwner(ownerId, now);
             case "PAST" -> bookingRepository.findPastByOwner(ownerId, now);
             case "FUTURE" -> bookingRepository.findFutureByOwner(ownerId, now);
             case "WAITING" -> bookingRepository.findByOwnerAndStatus(ownerId, BookingStatus.WAITING);
             case "REJECTED" -> bookingRepository.findByOwnerAndStatus(ownerId, BookingStatus.REJECTED);
-            default -> bookingRepository.findAllByOwnerOrderByStartDesc(ownerId); // ALL
+            default -> throw new IllegalArgumentException("Unknown state: " + state);
         };
+
         return bookings.stream().map(bookingMapper::toResponse).toList();
     }
 
