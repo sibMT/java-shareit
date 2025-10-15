@@ -30,9 +30,7 @@ class CommentControllerTest {
         mvc.perform(post("/items/{itemId}/comment", 10)
                         .header("X-Sharer-User-Id", "1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"text":"good"}
-                                """))
+                        .content("{\"text\":\"good\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(5))
                 .andExpect(jsonPath("$.text").value("good"));

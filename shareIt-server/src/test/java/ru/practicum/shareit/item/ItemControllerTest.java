@@ -32,9 +32,7 @@ class ItemControllerTest {
         mvc.perform(post("/items")
                         .header("X-Sharer-User-Id", "1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name":"Drill","description":"d","available":true}
-                                """))
+                        .content("{\"name\":\"Drill\",\"description\":\"d\",\"available\":true}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(10));
     }
