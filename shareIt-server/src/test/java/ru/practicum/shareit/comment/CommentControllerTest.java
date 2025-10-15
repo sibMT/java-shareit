@@ -7,6 +7,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.practicum.shareit.comment.dto.CommentCreateDto;
 import ru.practicum.shareit.comment.dto.CommentDto;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -23,7 +24,7 @@ class CommentControllerTest {
 
     @Test
     void addComment_ok() throws Exception {
-        Mockito.when(service.addComment(eq(1L), eq(10L), any()))
+        Mockito.when(service.addComment(eq(1L), eq(10L), any(CommentCreateDto.class)))
                 .thenReturn(CommentDto.builder().id(5L).text("good").authorName("A").build());
 
         mvc.perform(post("/items/{itemId}/comment", 10)

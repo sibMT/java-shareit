@@ -28,8 +28,8 @@ class ItemRequestServiceIT {
 
     @BeforeEach
     void setUp() {
-        u1 = users.save(User.builder().name("Anna").email("Anna@.com").build()).getId();
-        u2 = users.save(User.builder().name("Ivan").email("Ivan@.com").build()).getId();
+        u1 = users.save(new User(null, "Anna", "Anna@.com")).getId();
+        u2 = users.save(new User(null, "Ivan", "Ivan@.com")).getId();
     }
 
     @Test

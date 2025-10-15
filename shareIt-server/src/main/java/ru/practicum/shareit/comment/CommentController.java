@@ -16,10 +16,6 @@ public class CommentController {
                                  @PathVariable("itemId") Long itemId,
                                  @RequestBody CommentCreateDto body) {
 
-        CommentDto dto = CommentDto.builder()
-                .text(body.getText())
-                .build();
-
-        return commentService.addComment(userId, itemId, dto);
+        return commentService.addComment(userId, itemId, body);
     }
 }

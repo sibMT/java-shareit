@@ -33,8 +33,8 @@ class BookingServiceIT {
 
     @BeforeEach
     void setup() {
-        ownerId = users.save(User.builder().name("Owner").email("o@ex.com").build()).getId();
-        bookerId = users.save(User.builder().name("Book").email("b@ex.com").build()).getId();
+        ownerId = users.save(new User(null, "Owner", "o@ex.com")).getId();
+        bookerId = users.save(new User(null, "Book", "b@ex.com")).getId();
         itemId = itemService.createItem(ownerId,
                 ItemDto.builder().name("Drill").description("d").available(true).build()).getId();
     }

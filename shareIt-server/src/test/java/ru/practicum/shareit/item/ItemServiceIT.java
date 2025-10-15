@@ -26,7 +26,7 @@ class ItemServiceIT {
 
     @BeforeEach
     void setUp() {
-        ownerId = users.save(User.builder().name("Owner").email("o@ex.com").build()).getId();
+        ownerId = users.save(new User(null, "Owner", "o@ex.com")).getId();
     }
 
     @Test
@@ -52,7 +52,7 @@ class ItemServiceIT {
     void update_byNonOwner_forbidden() {
         var it = service.createItem(ownerId,
                 ItemDto.builder().name("Ladder").description("3m").available(true).build());
-        Long other = users.save(User.builder().name("U").email("u@ex.com").build()).getId();
+        Long other = users.save(new User(null, "U", "u@ex.com")).getId();
         assertThatThrownBy(() -> service.updateItem(other, it.getId(), ItemDto.builder().name("X").build()))
                 .isInstanceOf(SecurityException.class);
     }
