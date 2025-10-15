@@ -21,7 +21,7 @@ class UserServiceIT {
     UserService service;
 
     @Test
-    void create_update_get_delete_ok() {
+    void create_update_get_delete() {
         var created = service.createUser(new UserDto(null, "Max", "max@.com"));
         assertThat(created.getId()).isNotNull();
 
