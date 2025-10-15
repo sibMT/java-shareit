@@ -149,8 +149,8 @@ class ItemRequestServiceIT {
         assertThat(negFrom).extracting(ItemRequestDetailsDto::getDescription)
                 .containsExactly("r4", "r3");
 
-        var page1_from3 = service.getAllExceptOwn(u2, 3, 2);
-        assertThat(page1_from3).extracting(ItemRequestDetailsDto::getDescription)
+        var page1From3 = service.getAllExceptOwn(u2, 3, 2);
+        assertThat(page1From3).extracting(ItemRequestDetailsDto::getDescription)
                 .containsExactly("r2", "r1");
 
         var tail = service.getAllExceptOwn(u2, 5, 2);
