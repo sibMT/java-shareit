@@ -172,9 +172,16 @@
                                 </rule>
                             </rules>
                             <excludes>
-                              <exclude>**/*Dto*.class</exclude>
-                              <exclude>**/*Response*.class</exclude>
-                              <exclude>**/*Mapper*.class</exclude>
+                                <exclude>**/*Dto*.class</exclude>
+                                <exclude>**/*Request*.class</exclude>
+                                <exclude>**/*Response*.class</exclude>
+
+                                <exclude>**/*Mapper*.class</exclude>
+                                <exclude>**/*MapperImpl*.class</exclude>
+
+                                <exclude>**/*Controller*.class</exclude>
+                                <exclude>**/config/**</exclude>
+                                <exclude>**/*Configuration*.class</exclude>
                             </excludes>
                         </configuration>
                     </execution>
