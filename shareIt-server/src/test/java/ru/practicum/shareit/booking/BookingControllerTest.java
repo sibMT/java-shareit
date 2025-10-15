@@ -1,7 +1,6 @@
 package ru.practicum.shareit.booking;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -81,8 +80,8 @@ class BookingControllerTest {
 
         mvc.perform(get("/bookings/owner")
                         .header("X-Sharer-User-Id", "2")
-                        .param("state","ALL")
-                        .param("from","3").param("size","5"))
+                        .param("state", "ALL")
+                        .param("from", "3").param("size", "5"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].id").value(4));
