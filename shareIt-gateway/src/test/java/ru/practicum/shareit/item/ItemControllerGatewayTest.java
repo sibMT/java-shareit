@@ -16,7 +16,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = ItemController.class)
-class ItemControllerGatewayTests {
+class ItemControllerGatewayTest {
 
     @Autowired
     MockMvc mvc;
