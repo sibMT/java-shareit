@@ -2,10 +2,10 @@ package ru.practicum.shareit.booking;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingResponse;
 import ru.practicum.shareit.item.ItemService;
@@ -14,6 +14,7 @@ import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -24,8 +25,10 @@ class BookingServiceIT {
 
     @Autowired
     BookingService service;
+
     @Autowired
     ItemService itemService;
+
     @Autowired
     UserRepository users;
 
@@ -35,40 +38,65 @@ class BookingServiceIT {
     void setup() {
         ownerId = users.save(new User(null, "Owner", "o@ex.com")).getId();
         bookerId = users.save(new User(null, "Book", "b@ex.com")).getId();
-        itemId = itemService.createItem(ownerId,
-                ItemDto.builder().name("Drill").description("d").available(true).build()).getId();
+
+        itemId = itemService.createItem(
+                ownerId,
+                ItemDto.builder()
+                        .name("Drill")
+                        .description("d")
+                        .available(true)
+                        .build()
+        ).getId();
     }
 
     @Test
-    void create_and_approve_ok() {
-        var now = LocalDateTime.now().plusMinutes(5);
-        var dto = BookingDto.builder()
+    void create_and_approve() {
+        LocalDateTime start = LocalDateTime.now().plusDays(1);
+        LocalDateTime end = start.plusDays(1);
+
+        BookingDto req = BookingDto.builder()
                 .itemId(itemId)
-                .start(now)
-                .end(now.plusHours(2))
+                .start(start)
+                .end(end)
                 .build();
 
-        BookingResponse created = service.createBooking(bookerId, dto);
+        BookingResponse created = service.createBooking(bookerId, req);
         assertThat(created.getStatus()).isEqualTo(BookingStatus.WAITING);
 
-        var approved = service.approveBooking(ownerId, created.getId(), true);
+        BookingResponse approved = service.approveBooking(ownerId, created.getId(), true);
         assertThat(approved.getStatus()).isEqualTo(BookingStatus.APPROVED);
+
+        List<BookingResponse> forBooker = service.getBookingsByBooker(bookerId, "ALL");
+        assertThat(forBooker)
+                .extracting(BookingResponse::getId)
+                .contains(created.getId());
     }
 
     @Test
     void owner_cannot_book_his_item() {
-        var now = LocalDateTime.now().plusMinutes(5);
-        var dto = BookingDto.builder().itemId(itemId).start(now).end(now.plusHours(1)).build();
+        LocalDateTime start = LocalDateTime.now().plusMinutes(5);
+        BookingDto dto = BookingDto.builder()
+                .itemId(itemId)
+                .start(start)
+                .end(start.plusHours(1))
+                .build();
+
         assertThatThrownBy(() -> service.createBooking(ownerId, dto))
                 .isInstanceOf(SecurityException.class);
     }
 
     @Test
     void invalid_interval_rejected() {
-        var now = LocalDateTime.now().plusMinutes(5);
-        var dto = BookingDto.builder().itemId(itemId).start(now).end(now).build();
+        LocalDateTime start = LocalDateTime.now().plusMinutes(5);
+        BookingDto dto = BookingDto.builder()
+                .itemId(itemId)
+                .start(start)
+                .end(start)
+                .build();
+
         assertThatThrownBy(() -> service.createBooking(bookerId, dto))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }
+
 

@@ -30,7 +30,7 @@ class ItemServiceIT {
     }
 
     @Test
-    void create_update_get_search_ok() {
+    void create_update_get_search() {
         var created = service.createItem(ownerId,
                 ItemDto.builder().name("Drill").description("Cordless").available(true).build());
 
@@ -49,7 +49,7 @@ class ItemServiceIT {
     }
 
     @Test
-    void update_byNonOwner_forbidden() {
+    void update_byNotOwner_forbidden() {
         var it = service.createItem(ownerId,
                 ItemDto.builder().name("Ladder").description("3m").available(true).build());
         Long other = users.save(new User(null, "U", "u@ex.com")).getId();

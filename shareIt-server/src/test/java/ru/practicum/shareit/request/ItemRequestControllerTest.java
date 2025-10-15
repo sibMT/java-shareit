@@ -22,7 +22,7 @@ class ItemRequestControllerTest {
     ItemRequestService service;
 
     @Test
-    void create_ok() throws Exception {
+    void create() throws Exception {
         Mockito.when(service.create(eq(1L), any())).thenReturn(
                 ItemRequestDetailsDto.builder().id(100L).description("need").build()
         );

@@ -23,7 +23,7 @@ class CommentControllerTest {
     CommentService service;
 
     @Test
-    void addComment_ok() throws Exception {
+    void addComment() throws Exception {
         Mockito.when(service.addComment(eq(1L), eq(10L), any(CommentCreateDto.class)))
                 .thenReturn(CommentDto.builder().id(5L).text("good").authorName("A").build());
 
@@ -34,6 +34,20 @@ class CommentControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(5))
                 .andExpect(jsonPath("$.text").value("good"));
+    }
+
+    @Test
+    void addComment_whenTextEmpty() throws Exception {
+        Mockito.when(service.addComment(eq(1L), eq(10L), any()))
+                .thenReturn(CommentDto.builder().id(5L).text("").authorName("A").build());
+
+        mvc.perform(post("/items/{itemId}/comment", 10)
+                        .header("X-Sharer-User-Id", "1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"text\":\"\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(5))
+                .andExpect(jsonPath("$.text").value(""));
     }
 }
 

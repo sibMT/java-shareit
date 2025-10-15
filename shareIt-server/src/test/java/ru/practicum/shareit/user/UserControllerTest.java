@@ -24,7 +24,7 @@ class UserControllerTest {
     UserService service;
 
     @Test
-    void create_ok() throws Exception {
+    void create() throws Exception {
         Mockito.when(service.createUser(any()))
                 .thenReturn(new UserDto(1L, "Max", "max@ex.com"));
 
@@ -36,7 +36,7 @@ class UserControllerTest {
     }
 
     @Test
-    void getAll_ok() throws Exception {
+    void getAll() throws Exception {
         Mockito.when(service.getAllUsers()).thenReturn(List.of(
                 new UserDto(1L, "A", "a@ex.com"), new UserDto(2L, "B", "b@ex.com")
         ));
@@ -44,5 +44,15 @@ class UserControllerTest {
         mvc.perform(get("/users"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[1].email").value("b@ex.com"));
+    }
+
+    @Test
+    void getById() throws Exception {
+        Mockito.when(service.getUserById(5L))
+                .thenReturn(new UserDto(5L, "A", "a@ex.com"));
+
+        mvc.perform(get("/users/{id}", 5))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("a@ex.com"));
     }
 }
