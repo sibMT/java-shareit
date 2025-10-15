@@ -22,9 +22,7 @@ public class UserControllerGatewayTest {
     void create_invalidEmail_returns400() throws Exception {
         mvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name":"Max","email":"not-an-email"}
-                                """))
+                        .content("{\"name\":\"Max\",\"email\":\"not-an-email\"}"))
                 .andExpect(status().isBadRequest());
         verifyNoInteractions(client);
     }

@@ -24,9 +24,7 @@ public class ItemControllerGatewayTest {
         mvc.perform(post("/items")
                         .header("X-Sharer-User-Id", "1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name":"","description":"","available":null}
-                                """))
+                        .content("{\"name\":\"\",\"description\":\"\",\"available\":null}"))
                 .andExpect(status().isBadRequest());
         verifyNoInteractions(client);
     }

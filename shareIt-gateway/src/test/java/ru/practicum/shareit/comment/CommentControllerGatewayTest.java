@@ -23,9 +23,7 @@ public class CommentControllerGatewayTest {
         mvc.perform(post("/items/{itemId}/comment", 10)
                         .header("X-Sharer-User-Id", "1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"text":""}
-                                """))
+                        .content("{\"text\":\"\"}"))
                 .andExpect(status().isBadRequest());
         verifyNoInteractions(client);
     }

@@ -24,9 +24,9 @@ class BookingControllerGatewayTest {
         mvc.perform(post("/bookings")
                         .header("X-Sharer-User-Id", "1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                    {"itemId":1,"start":"2025-01-01T10:00:00","end":"2025-01-01T10:00:00"}
-                                """))
+                        .content("{\"itemId\":1," +
+                                "\"start\":\"2025-01-01T10:00:00\"," +
+                                "\"end\":\"2025-01-01T10:00:00\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").exists());
 
