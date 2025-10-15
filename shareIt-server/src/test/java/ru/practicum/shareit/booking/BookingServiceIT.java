@@ -178,6 +178,57 @@ class BookingServiceIT {
         assertThatThrownBy(() -> service.getBookingById(bookerId, 9999L))
                 .isInstanceOf(NoSuchElementException.class);
     }
+
+    @Test
+    void cancelBooking_success_and_alreadyStarted_orNotAuthor_fails() {
+        var start = LocalDateTime.now().plusHours(2);
+        var end = start.plusHours(2);
+
+        var booking = service.createBooking(bookerId,
+                BookingDto.builder().itemId(itemId).start(start).end(end).build());
+        service.approveBooking(ownerId, booking.getId(), true);
+
+        var canceled = service.cancelBooking(bookerId, booking.getId());
+        assertThat(canceled.getStatus()).isEqualTo(BookingStatus.CANCELED);
+
+        var canceledAgain = service.cancelBooking(bookerId, booking.getId());
+        assertThat(canceledAgain.getStatus()).isEqualTo(BookingStatus.CANCELED);
+
+        assertThatThrownBy(() -> service.cancelBooking(otherId, booking.getId()))
+                .isInstanceOf(SecurityException.class);
+
+        var started = service.createBooking(bookerId,
+                BookingDto.builder()
+                        .itemId(itemId)
+                        .start(LocalDateTime.now().minusHours(2))
+                        .end(LocalDateTime.now().plusHours(1))
+                        .build());
+        service.approveBooking(ownerId, started.getId(), true);
+
+        assertThatThrownBy(() -> service.cancelBooking(bookerId, started.getId()))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void approveLatestWaiting_noWaitingBookings_fails() {
+        assertThatThrownBy(() -> service.approveLatestWaiting(ownerId, true))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+
+    @Test
+    void createBooking_itemUnavailable_rejected() {
+        itemService.updateItem(ownerId,
+                itemId,
+                ItemDto.builder().available(false).build());
+
+        var start = LocalDateTime.now().plusDays(1);
+        var end = start.plusDays(1);
+
+        assertThatThrownBy(() -> service.createBooking(bookerId,
+                BookingDto.builder().itemId(itemId).start(start).end(end).build()))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }
 
 

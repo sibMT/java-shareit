@@ -66,4 +66,16 @@ class ItemControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Drill"));
     }
+
+    @Test
+    void update_forbidden_whenNotOwner() throws Exception {
+        Mockito.when(service.updateItem(eq(2L), eq(10L), any()))
+                .thenThrow(new SecurityException("forbidden"));
+
+        mvc.perform(patch("/items/{id}", 10)
+                        .header("X-Sharer-User-Id", "2")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Hack\"}"))
+                .andExpect(status().isForbidden());
+    }
 }

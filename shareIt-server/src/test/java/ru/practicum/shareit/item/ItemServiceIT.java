@@ -116,5 +116,65 @@ class ItemServiceIT {
                 .contains("dRiLl PRO")
                 .doesNotContain("drill mini");
     }
+
+    @Test
+    void nonOwnerView_hasNoLastNext_butSeesComments() {
+        var pastStart = LocalDateTime.now().minusDays(3);
+        var pastEnd = LocalDateTime.now().minusDays(1);
+        var past = bookingService.createBooking(
+                bookerId, BookingDto.builder().itemId(itemId).start(pastStart).end(pastEnd).build());
+        bookingService.approveBooking(ownerId, past.getId(), true);
+
+        var futStart = LocalDateTime.now().plusDays(2);
+        var futEnd = futStart.plusDays(1);
+        var future = bookingService.createBooking(
+                bookerId, BookingDto.builder().itemId(itemId).start(futStart).end(futEnd).build());
+        bookingService.approveBooking(ownerId, future.getId(), true);
+
+        commentService.addComment(bookerId, itemId,
+                CommentCreateDto.builder().text("nice").build());
+
+        var view = service.getItemById(bookerId, itemId);
+        assertThat(view.getLastBooking()).isNull();
+        assertThat(view.getNextBooking()).isNull();
+        assertThat(view.getComments()).extracting("authorName").contains("Booker");
+    }
+
+    @Test
+    void update_notOwner_forbidden() {
+        Long stranger = users.save(new User(null, "X", "x@ex.com")).getId();
+        assertThatThrownBy(() ->
+                service.updateItem(stranger, itemId, ItemDto.builder().name("Hacked").build())
+        ).isInstanceOf(SecurityException.class);
+    }
+
+    @Test
+    void create_withMissingRequest_throws() {
+        assertThatThrownBy(() ->
+                service.createItem(ownerId,
+                        ItemDto.builder().name("Saw").description("d").available(true).requestId(999L).build())
+        ).isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    void getById_requesterNotFound_throws() {
+        Long unknownUserId = 999_999L;
+        assertThatThrownBy(() -> service.getItemById(unknownUserId, itemId))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    void addComment_withoutPastBooking_forbidden() {
+        var start = LocalDateTime.now().plusDays(1);
+        var end = start.plusDays(1);
+        var br = bookingService.createBooking(
+                bookerId, BookingDto.builder().itemId(itemId).start(start).end(end).build());
+        bookingService.approveBooking(ownerId, br.getId(), true);
+
+        assertThatThrownBy(() ->
+                commentService.addComment(bookerId, itemId,
+                        CommentCreateDto.builder().text("should fail").build())
+        ).isInstanceOf(IllegalStateException.class);
+    }
 }
 
