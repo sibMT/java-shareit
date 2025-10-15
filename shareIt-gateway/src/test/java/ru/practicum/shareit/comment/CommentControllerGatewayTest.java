@@ -4,14 +4,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -24,27 +24,27 @@ class CommentControllerGatewayTest {
     CommentClient client;
 
     @Test
-    void addComment_blankText_returns400() throws Exception {
+    void addComment_blankText_400() throws Exception {
         mvc.perform(post("/items/{itemId}/comment", 10)
                         .header("X-Sharer-User-Id", "1")
-                        .contentType(MediaType.APPLICATION_JSON)
+                        .contentType("application/json")
                         .content("{\"text\":\"\"}"))
                 .andExpect(status().isBadRequest());
-
         verifyNoInteractions(client);
     }
 
     @Test
-    void addComment_valid_returns200_andCallsClient() throws Exception {
-        when(client.addComment(any(), any(), any())).thenReturn(ResponseEntity.ok().build());
+    void addComment_valid_200_andDelegates() throws Exception {
+        given(client.addComment(anyLong(), anyLong(), any())).willReturn(ResponseEntity.ok().build());
 
-        mvc.perform(post("/items/{itemId}/comment", 10)
-                        .header("X-Sharer-User-Id", "1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"text\":\"Nice!\"}"))
+        mvc.perform(post("/items/{itemId}/comment", 10L)
+                        .header("X-Sharer-User-Id", "5")
+                        .contentType("application/json")
+                        .content("{\"text\":\"Nice thing!\"}"))
                 .andExpect(status().isOk());
 
-        verify(client).addComment(any(), any(), any());
+        verify(client).addComment(anyLong(), anyLong(), any());
     }
 }
+
 
