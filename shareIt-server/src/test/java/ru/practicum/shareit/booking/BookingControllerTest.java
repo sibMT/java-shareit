@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -26,7 +27,7 @@ class BookingControllerTest {
 
     @Test
     void getByBooker_with_pagination() throws Exception {
-        Mockito.when(service.getBookingsByBooker(eq(5L), eq("ALL")))
+        when(service.getBookingsByBooker(eq(5L), eq("ALL")))
                 .thenReturn(List.of(
                         new BookingResponse(1L, LocalDateTime.now(), LocalDateTime.now().plusHours(1), BookingStatus.APPROVED, null, null),
                         new BookingResponse(2L, LocalDateTime.now(), LocalDateTime.now().plusHours(2), BookingStatus.WAITING, null, null)
@@ -46,7 +47,7 @@ class BookingControllerTest {
         var start = LocalDateTime.now().plusDays(1);
         var end = start.plusDays(1);
 
-        Mockito.when(service.createBooking(eq(1L), any()))
+        when(service.createBooking(eq(1L), any()))
                 .thenReturn(BookingResponse.builder().id(100L).status(BookingStatus.WAITING).build());
 
         mvc.perform(post("/bookings")
@@ -59,13 +60,32 @@ class BookingControllerTest {
 
     @Test
     void approve() throws Exception {
-        Mockito.when(service.approveBooking(1L, 5L, true))
+        when(service.approveBooking(1L, 5L, true))
                 .thenReturn(BookingResponse.builder().id(5L).status(BookingStatus.APPROVED).build());
 
         mvc.perform(patch("/bookings/{id}", 5).param("approved", "true")
                         .header("X-Sharer-User-Id", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("APPROVED"));
+    }
+
+    @Test
+    void listByOwner_tailPage_isClipped() throws Exception {
+        var list = java.util.List.of(
+                BookingResponse.builder().id(1L).build(),
+                BookingResponse.builder().id(2L).build(),
+                BookingResponse.builder().id(3L).build(),
+                BookingResponse.builder().id(4L).build()
+        );
+        when(service.getBookingsByOwner(2L, "ALL")).thenReturn(list);
+
+        mvc.perform(get("/bookings/owner")
+                        .header("X-Sharer-User-Id", "2")
+                        .param("state","ALL")
+                        .param("from","3").param("size","5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(4));
     }
 }
 
