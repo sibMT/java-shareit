@@ -6,11 +6,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.booking.BookingService;
+import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.comment.CommentService;
+import ru.practicum.shareit.comment.dto.CommentCreateDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
 
-import static org.assertj.core.api.Assertions.*;
+import java.time.LocalDateTime;
+import java.util.NoSuchElementException;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -20,45 +28,93 @@ class ItemServiceIT {
     @Autowired
     ItemService service;
     @Autowired
+    BookingService bookingService;
+    @Autowired
+    CommentService commentService;
+    @Autowired
     UserRepository users;
 
-    Long ownerId;
+    Long ownerId, bookerId, itemId;
 
     @BeforeEach
     void setUp() {
         ownerId = users.save(new User(null, "Owner", "o@ex.com")).getId();
+        bookerId = users.save(new User(null, "Booker", "b@ex.com")).getId();
+        itemId = service.createItem(
+                ownerId,
+                ItemDto.builder().name("Drill").description("Cordless").available(true).build()
+        ).getId();
     }
 
     @Test
-    void create_update_get_search() {
-        var created = service.createItem(ownerId,
-                ItemDto.builder().name("Drill").description("Cordless").available(true).build());
+    void ownerView_contains_last_next_and_comments() {
+        var pastStart = LocalDateTime.now().minusDays(3);
+        var pastEnd = LocalDateTime.now().minusDays(1);
+        var past = bookingService.createBooking(
+                bookerId, BookingDto.builder().itemId(itemId).start(pastStart).end(pastEnd).build()
+        );
+        bookingService.approveBooking(ownerId, past.getId(), true);
 
-        var updated = service.updateItem(ownerId, created.getId(),
-                ItemDto.builder().description("Cordless 18V").build());
-        assertThat(updated.getDescription()).isEqualTo("Cordless 18V");
+        var futStart = LocalDateTime.now().plusDays(2);
+        var futEnd = futStart.plusDays(1);
+        var future = bookingService.createBooking(
+                bookerId, BookingDto.builder().itemId(itemId).start(futStart).end(futEnd).build()
+        );
+        bookingService.approveBooking(ownerId, future.getId(), true);
 
-        var items = service.getItemsByOwner(ownerId);
-        assertThat(items).hasSize(1);
+        var comment = commentService.addComment(
+                bookerId, itemId, CommentCreateDto.builder().text("nice").build()
+        );
+        assertThat(comment.getText()).isEqualTo("nice");
 
-        var found = service.searchItem("drill");
-        assertThat(found).extracting(ItemDto::getName).containsExactly("Drill");
+        var view = service.getItemById(ownerId, itemId);
+        assertThat(view.getLastBooking()).isNotNull();
+        assertThat(view.getLastBooking().getId()).isEqualTo(past.getId());
+        assertThat(view.getNextBooking()).isNotNull();
+        assertThat(view.getNextBooking().getId()).isEqualTo(future.getId());
 
-        var byId = service.getItemById(ownerId, created.getId());
-        assertThat(byId.getName()).isEqualTo("Drill");
+        assertThat(view.getComments())
+                .extracting("authorName")
+                .contains("Booker");
     }
 
     @Test
-    void update_byNotOwner_forbidden() {
-        var it = service.createItem(ownerId,
-                ItemDto.builder().name("Ladder").description("3m").available(true).build());
-        Long other = users.save(new User(null, "U", "u@ex.com")).getId();
-        assertThatThrownBy(() -> service.updateItem(other, it.getId(), ItemDto.builder().name("X").build()))
-                .isInstanceOf(SecurityException.class);
+    void partial_update_does_not_overwrite_with_nulls() {
+        var created = service.createItem(
+                ownerId, ItemDto.builder().name("Ladder").description("3m").available(true).build()
+        );
+
+        var patched = service.updateItem(
+                ownerId, created.getId(), ItemDto.builder().description(null).available(null).build()
+        );
+
+        assertThat(patched.getName()).isEqualTo("Ladder");
+        assertThat(patched.getDescription()).isEqualTo("3m");
+        assertThat(patched.getAvailable()).isTrue();
     }
 
     @Test
-    void search_blank_returnsEmpty() {
-        assertThat(service.searchItem("")).isEmpty();
+    void getById_notFound_and_update_notFound() {
+        assertThatThrownBy(() -> service.getItemById(ownerId, 9999L))
+                .isInstanceOf(NoSuchElementException.class);
+
+        assertThatThrownBy(() -> service.updateItem(ownerId, 9999L, ItemDto.builder().name("X").build()))
+                .isInstanceOf(NoSuchElementException.class);
+    }
+
+    @Test
+    void search_is_case_insensitive_and_returns_only_available() {
+        service.createItem(ownerId,
+                ItemDto.builder().name("dRiLl PRO").description("heavy").available(true).build());
+        service.createItem(ownerId,
+                ItemDto.builder().name("drill mini").description("light").available(false).build());
+
+        var found = service.searchItem("DRILL");
+
+        assertThat(found)
+                .extracting(ItemDto::getName)
+                .contains("dRiLl PRO")
+                .doesNotContain("drill mini");
     }
 }
+
