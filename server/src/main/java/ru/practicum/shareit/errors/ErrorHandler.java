@@ -70,4 +70,10 @@ public class ErrorHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(Map.of("error", ex.getMessage() == null ? "forbidden" : ex.getMessage()));
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Object> handleIllegal(IllegalArgumentException ex) {
+        log.warn("Illegal argument: {}", ex.getMessage(), ex);
+        return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+    }
 }
