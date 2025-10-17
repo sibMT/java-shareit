@@ -11,7 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.TransactionSystemException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.nio.file.AccessDeniedException;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -52,5 +54,20 @@ public class ErrorHandler {
         log.error("Unexpected error", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "internal error"));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Object> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        String msg = "bad request: parameter '%s' has invalid value '%s'"
+                .formatted(ex.getName(), ex.getValue());
+        log.warn("Type mismatch: {}", msg, ex);
+        return ResponseEntity.badRequest().body(Map.of("error", msg));
+    }
+
+    @ExceptionHandler({AccessDeniedException.class, SecurityException.class})
+    public ResponseEntity<Object> handleForbidden(Exception ex) {
+        log.warn("Forbidden: {}", ex.getMessage(), ex);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", ex.getMessage() == null ? "forbidden" : ex.getMessage()));
     }
 }
