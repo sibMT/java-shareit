@@ -1,53 +1,56 @@
 package ru.practicum.shareit.errors;
 
+import jakarta.persistence.EntityNotFoundException;
+import org.hibernate.exception.ConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.transaction.TransactionSystemException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.concurrent.ConcurrentHashMap;
 
 @RestControllerAdvice
 public class ErrorHandler {
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Object> handleValidation(MethodArgumentNotValidException ex) {
-        String msg = ex.getBindingResult().getFieldErrors().stream()
-                .map(e -> e.getField() + ": " + e.getDefaultMessage())
-                .findFirst().orElse("Validation failed");
-        return ResponseEntity.badRequest().body(Map.of("error", msg));
+
+    private static final Logger log = LoggerFactory.getLogger(ErrorHandler.class);
+
+    @ExceptionHandler(TransactionSystemException.class)
+    public ResponseEntity<Object> handleTransaction(TransactionSystemException ex) {
+        log.error("Transaction error", ex);
+        if (ex.getCause() instanceof ConstraintViolationException) {
+            return ResponseEntity.badRequest().body(Map.of("error", "validation failed"));
+        }
+        return ResponseEntity.internalServerError().body(Map.of("error", "internal error"));
     }
 
     @ExceptionHandler({
-            IllegalArgumentException.class,
-            IllegalStateException.class
+            NoSuchElementException.class,
+            EntityNotFoundException.class,
+            EmptyResultDataAccessException.class
     })
-    public ResponseEntity<Object> handleBadRequest(RuntimeException ex) {
-        return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
-    }
-
-    @ExceptionHandler(SecurityException.class)
-    public ResponseEntity<Object> handleForbidden(SecurityException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
-    }
-
-    @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<Object> handleNotFound(NoSuchElementException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
+    public ResponseEntity<Object> handleNotFound(RuntimeException ex) {
+        log.warn("Not found: {}", ex.getMessage(), ex);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "resource not found"));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Object> handleConflict(DataIntegrityViolationException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "conflict: " +
-                ex.getMostSpecificCause().getMessage()));
+        log.error("Data integrity violation", ex);
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("error", "data integrity violation"));
     }
 
     @ExceptionHandler(Throwable.class)
     public ResponseEntity<Object> handleAny(Throwable ex) {
+        log.error("Unexpected error", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ConcurrentHashMap<>(Map.of("error", "internal error", "message", ex.getMessage())));
+                .body(Map.of("error", "internal error"));
     }
 }
